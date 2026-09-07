@@ -9,7 +9,6 @@ namespace jsonmini {
 
 enum class Type { Null, Bool, Number, String, Array, Object };
 
-/// In-memory JSON value container (parse / stringify arrive in later commits).
 class Value {
 public:
     Value();
@@ -31,6 +30,10 @@ public:
     const std::map<std::string, Value> &as_object() const;
     std::map<std::string, Value> &as_object();
 
+    /// Serialize this value. Arrays/objects are supported for constructed Values;
+    /// the parser currently accepts scalar JSON only.
+    std::string stringify(bool pretty = false, int indent = 0) const;
+
 private:
     Type type_;
     bool bool_ = false;
@@ -39,5 +42,19 @@ private:
     std::vector<Value> array_;
     std::map<std::string, Value> object_;
 };
+
+class ParseError : public std::runtime_error {
+public:
+    ParseError(const std::string &message, std::size_t line, std::size_t column);
+    std::size_t line() const { return line_; }
+    std::size_t column() const { return column_; }
+
+private:
+    std::size_t line_;
+    std::size_t column_;
+};
+
+/// Parse a single JSON scalar: null, boolean, number, or string.
+Value parse(const std::string &text);
 
 }  // namespace jsonmini

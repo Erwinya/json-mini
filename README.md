@@ -6,21 +6,20 @@ No third-party dependencies.
 
 ## Status
 
-`Value` container types are in place (`Null`, `Bool`, `Number`, `String`, `Array`, `Object`).  
-Parser, stringify, CLI, samples, and build scripts will land in follow-up commits.
+Scalar parse and stringify are available (`null`, `boolean`, `number`, `string`).  
+Array/object parsing, CLI, samples, and build scripts will land in follow-up commits.
 
 ## Library (so far)
 
 ```cpp
 #include "json_mini.hpp"
 
-jsonmini::Value n;                 // null
-jsonmini::Value b(true);
-jsonmini::Value x(3.14);
-jsonmini::Value s(std::string{"ok"});
-auto arr = jsonmini::Value::array();
-auto obj = jsonmini::Value::object();
+auto v = jsonmini::parse("\"hello\"");
+std::cout << v.stringify();           // "hello"
+std::cout << jsonmini::parse("3.14").as_number();
 ```
+
+`ParseError` reports line and column for invalid input. Arrays/objects are rejected by `parse` for now (constructed `Value::array()` / `Value::object()` can still `stringify`).
 
 ## Requirements
 
