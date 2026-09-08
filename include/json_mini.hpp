@@ -30,8 +30,7 @@ public:
     const std::map<std::string, Value> &as_object() const;
     std::map<std::string, Value> &as_object();
 
-    /// Serialize this value. Arrays/objects are supported for constructed Values;
-    /// the parser currently accepts scalar JSON only.
+    /// Serialize this value to JSON text (pretty optional).
     std::string stringify(bool pretty = false, int indent = 0) const;
 
 private:
@@ -54,7 +53,7 @@ private:
     std::size_t column_;
 };
 
-/// Parse a single JSON scalar: null, boolean, number, or string.
+/// Parse a JSON value (scalars, arrays, and objects).
 Value parse(const std::string &text);
 
 }  // namespace jsonmini

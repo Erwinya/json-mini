@@ -6,9 +6,9 @@
 namespace jsonmini {
 namespace {
 
-class ScalarParser {
+class Parser {
 public:
-    explicit ScalarParser(const std::string &text) : text_(text) {}
+    explicit Parser(const std::string &text) : text_(text) {}
 
     Value parse_value() {
         skip_ws();
@@ -19,10 +19,9 @@ public:
         if (c == 'n') return parse_null();
         if (c == 't' || c == 'f') return parse_bool();
         if (c == '"') return parse_string_value();
+        if (c == '[') return parse_array();
+        if (c == '{') return parse_object();
         if (c == '-' || std::isdigit(static_cast<unsigned char>(c))) return parse_number();
-        if (c == '[' || c == '{') {
-            throw error("arrays and objects are not supported yet");
-        }
         throw error(std::string("unexpected character '") + c + "'");
     }
 
@@ -61,6 +60,7 @@ private:
     }
 
     void expect(char ch) {
+        skip_ws();
         if (pos_ >= text_.size() || text_[pos_] != ch) {
             throw error(std::string("expected '") + ch + "'");
         }
@@ -167,6 +167,52 @@ private:
         } catch (...) {
             throw error("number out of range");
         }
+    }
+
+    Value parse_array() {
+        expect('[');
+        Value arr = Value::array();
+        skip_ws();
+        if (pos_ < text_.size() && text_[pos_] == ']') {
+            advance();
+            return arr;
+        }
+        while (true) {
+            arr.as_array().push_back(parse_value());
+            skip_ws();
+            if (pos_ < text_.size() && text_[pos_] == ']') {
+                advance();
+                break;
+            }
+            expect(',');
+        }
+        return arr;
+    }
+
+    Value parse_object() {
+        expect('{');
+        Value obj = Value::object();
+        skip_ws();
+        if (pos_ < text_.size() && text_[pos_] == '}') {
+            advance();
+            return obj;
+        }
+        while (true) {
+            skip_ws();
+            if (pos_ >= text_.size() || text_[pos_] != '"') {
+                throw error("expected object key string");
+            }
+            std::string key = parse_string();
+            expect(':');
+            obj.as_object().emplace(std::move(key), parse_value());
+            skip_ws();
+            if (pos_ < text_.size() && text_[pos_] == '}') {
+                advance();
+                break;
+            }
+            expect(',');
+        }
+        return obj;
     }
 };
 
@@ -308,7 +354,7 @@ ParseError::ParseError(const std::string &message, std::size_t line, std::size_t
       column_(column) {}
 
 Value parse(const std::string &text) {
-    ScalarParser parser(text);
+    Parser parser(text);
     Value value = parser.parse_value();
     parser.expect_end();
     return value;
