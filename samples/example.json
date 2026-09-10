@@ -1,0 +1,6 @@
+{
+  "name": "json-mini",
+  "version": 1,
+  "features": ["null", "bool", "number", "string", "array", "object"],
+  "ok": true
+}

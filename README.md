@@ -4,25 +4,49 @@ Small **C++17** JSON library and CLI: parse, validate, and pretty-print JSON wit
 
 No third-party dependencies.
 
-## Status
+## Build
 
-Full value parsing is available: scalars, arrays, and objects, plus stringify with optional pretty-print.  
-CLI, samples, and build scripts will land in follow-up commits.
+```bash
+make
+```
 
-## Library (so far)
+Windows (MinGW/LLVM):
+
+```bat
+build.bat
+```
+
+## Usage
+
+```bash
+./json-mini --pretty --file samples/example.json
+```
+
+```bash
+echo "{\"a\":[1,true,null]}" | ./json-mini --pretty
+```
+
+Windows:
+
+```bat
+build\json-mini.exe --pretty --file samples\example.json
+```
+
+## Library
 
 ```cpp
 #include "json_mini.hpp"
-
-auto v = jsonmini::parse(R"({"ok":true,"n":[1,2]})");
+auto v = jsonmini::parse(text);
 std::cout << v.stringify(true);
 ```
 
 `ParseError` reports line and column for invalid input.
 
-## Requirements
+## Exit codes
 
-- C++17 compiler (g++ / clang++ / MSVC)
+- `0` — parsed and printed successfully
+- `1` — parse / runtime error
+- `2` — usage or I/O error
 
 ## License
 
