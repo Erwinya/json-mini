@@ -20,6 +20,7 @@ build.bat
 
 ```bash
 ./json-mini --pretty --file samples/example.json
+./json-mini --validate --file samples/example.json
 ```
 
 ```bash
@@ -30,7 +31,10 @@ Windows:
 
 ```bat
 build\json-mini.exe --pretty --file samples\example.json
+build\json-mini.exe --validate --file samples\example.json
 ```
+
+`--validate` parses the input and exits `0` on success without printing the value.
 
 ## Library
 
@@ -44,7 +48,7 @@ std::cout << v.stringify(true);
 
 ## Exit codes
 
-- `0` — parsed and printed successfully
+- `0` — success (`--validate` prints nothing)
 - `1` — parse / runtime error
 - `2` — usage or I/O error
 

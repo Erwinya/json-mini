@@ -8,8 +8,10 @@
 namespace {
 
 void usage(const char *prog) {
-    std::cerr << "Usage: " << prog << " [--pretty] [--file path]\n"
-              << "Parse JSON from a file or stdin and print it.\n";
+    std::cerr << "Usage: " << prog << " [--pretty] [--validate] [--file path]\n"
+              << "Parse JSON from a file or stdin.\n"
+              << "  --pretty    pretty-print output\n"
+              << "  --validate  check only; print nothing on success\n";
 }
 
 std::string read_all(std::istream &in) {
@@ -22,6 +24,7 @@ std::string read_all(std::istream &in) {
 
 int main(int argc, char **argv) {
     bool pretty = false;
+    bool validate_only = false;
     const char *path = nullptr;
 
     for (int i = 1; i < argc; ++i) {
@@ -32,6 +35,10 @@ int main(int argc, char **argv) {
         }
         if (arg == "--pretty") {
             pretty = true;
+            continue;
+        }
+        if (arg == "--validate") {
+            validate_only = true;
             continue;
         }
         if (arg == "--file") {
@@ -61,7 +68,9 @@ int main(int argc, char **argv) {
         }
 
         jsonmini::Value value = jsonmini::parse(text);
-        std::cout << value.stringify(pretty) << '\n';
+        if (!validate_only) {
+            std::cout << value.stringify(pretty) << '\n';
+        }
         return 0;
     } catch (const jsonmini::ParseError &ex) {
         std::cerr << ex.what() << '\n';
