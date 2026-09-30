@@ -34,6 +34,18 @@ build\json-mini.exe --pretty --file samples\example.json
 build\json-mini.exe --validate --file samples\example.json
 ```
 
+Windows PowerShell:
+
+```powershell
+.\build\json-mini.exe --pretty --file samples\example.json
+.\build\json-mini.exe --validate --file samples\example.json
+```
+
+```powershell
+'{"a":[1,true,null]}' | .\build\json-mini.exe --pretty
+Get-Content samples\example.json -Raw | .\build\json-mini.exe --pretty
+```
+
 `--validate` parses the input and exits `0` on success without printing the value.
 
 ## Library
@@ -48,9 +60,9 @@ std::cout << v.stringify(true);
 
 ## Exit codes
 
-- `0` — success (`--validate` prints nothing)
-- `1` — parse / runtime error
-- `2` — usage or I/O error
+- `0` â€” success (`--validate` prints nothing)
+- `1` â€” parse / runtime error
+- `2` â€” usage or I/O error
 
 ## License
 
