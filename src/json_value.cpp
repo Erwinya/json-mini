@@ -1,10 +1,31 @@
 #include "json_mini.hpp"
 
 #include <cctype>
+#include <cmath>
+#include <iomanip>
+#include <limits>
 #include <sstream>
 
 namespace jsonmini {
 namespace {
+
+void append_utf8(std::string &out, unsigned codepoint) {
+    if (codepoint <= 0x7F) {
+        out.push_back(static_cast<char>(codepoint));
+    } else if (codepoint <= 0x7FF) {
+        out.push_back(static_cast<char>(0xC0 | ((codepoint >> 6) & 0x1F)));
+        out.push_back(static_cast<char>(0x80 | (codepoint & 0x3F)));
+    } else if (codepoint <= 0xFFFF) {
+        out.push_back(static_cast<char>(0xE0 | ((codepoint >> 12) & 0x0F)));
+        out.push_back(static_cast<char>(0x80 | ((codepoint >> 6) & 0x3F)));
+        out.push_back(static_cast<char>(0x80 | (codepoint & 0x3F)));
+    } else {
+        out.push_back(static_cast<char>(0xF0 | ((codepoint >> 18) & 0x07)));
+        out.push_back(static_cast<char>(0x80 | ((codepoint >> 12) & 0x3F)));
+        out.push_back(static_cast<char>(0x80 | ((codepoint >> 6) & 0x3F)));
+        out.push_back(static_cast<char>(0x80 | (codepoint & 0x3F)));
+    }
+}
 
 class Parser {
 public:
@@ -53,10 +74,29 @@ private:
     }
 
     void skip_ws() {
-        while (pos_ < text_.size() &&
-               std::isspace(static_cast<unsigned char>(text_[pos_]))) {
-            advance();
+        while (pos_ < text_.size()) {
+            char c = text_[pos_];
+            if (c == ' ' || c == '\t' || c == '\n' || c == '\r') {
+                advance();
+                continue;
+            }
+            break;
         }
+    }
+
+    unsigned parse_hex4() {
+        unsigned value = 0;
+        for (int i = 0; i < 4; ++i) {
+            if (pos_ >= text_.size()) throw error("invalid unicode escape");
+            char c = text_[pos_];
+            advance();
+            value <<= 4;
+            if (c >= '0' && c <= '9') value |= static_cast<unsigned>(c - '0');
+            else if (c >= 'a' && c <= 'f') value |= static_cast<unsigned>(c - 'a' + 10);
+            else if (c >= 'A' && c <= 'F') value |= static_cast<unsigned>(c - 'A' + 10);
+            else throw error("invalid unicode escape");
+        }
+        return value;
     }
 
     void expect(char ch) {
@@ -108,6 +148,27 @@ private:
                     case 'n': out.push_back('\n'); break;
                     case 'r': out.push_back('\r'); break;
                     case 't': out.push_back('\t'); break;
+                    case 'u': {
+                        unsigned cu = parse_hex4();
+                        if (cu >= 0xD800 && cu <= 0xDBFF) {
+                            if (pos_ + 1 >= text_.size() || text_[pos_] != '\\' || text_[pos_ + 1] != 'u') {
+                                throw error("invalid unicode surrogate pair");
+                            }
+                            advance();
+                            advance();
+                            unsigned cu2 = parse_hex4();
+                            if (cu2 < 0xDC00 || cu2 > 0xDFFF) {
+                                throw error("invalid unicode surrogate pair");
+                            }
+                            unsigned codepoint = 0x10000 + ((cu - 0xD800) << 10) + (cu2 - 0xDC00);
+                            append_utf8(out, codepoint);
+                        } else if (cu >= 0xDC00 && cu <= 0xDFFF) {
+                            throw error("invalid unicode surrogate pair");
+                        } else {
+                            append_utf8(out, cu);
+                        }
+                        break;
+                    }
                     default: throw error("invalid escape sequence");
                 }
                 continue;
@@ -204,7 +265,12 @@ private:
             }
             std::string key = parse_string();
             expect(':');
-            obj.as_object().emplace(std::move(key), parse_value());
+            Value value = parse_value();
+            auto &object = obj.as_object();
+            if (object.find(key) != object.end()) {
+                throw error("duplicate object key");
+            }
+            object.emplace(std::move(key), std::move(value));
             skip_ws();
             if (pos_ < text_.size() && text_[pos_] == '}') {
                 advance();
@@ -303,9 +369,12 @@ std::string Value::stringify(bool pretty, int indent) const {
         case Type::Bool:
             return bool_ ? "true" : "false";
         case Type::Number: {
+            if (!std::isfinite(number_)) {
+                throw std::runtime_error("cannot serialize non-finite number");
+            }
             std::ostringstream out;
-            out.precision(15);
-            out << number_;
+            out.setf(std::ios::fmtflags(0), std::ios::floatfield);
+            out << std::setprecision(std::numeric_limits<double>::max_digits10) << number_;
             return out.str();
         }
         case Type::String:
