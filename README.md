@@ -4,16 +4,22 @@ Small **C++17** JSON library and CLI: parse, validate, and pretty-print JSON wit
 
 No third-party dependencies.
 
+## Status
+
+Library, CLI, unit tests, and CI. Parser follows a practical RFC 8259 subset: strict whitespace, `\uXXXX` / surrogate pairs, duplicate-key rejection, and finite number serialization.
+
 ## Build
 
 ```bash
 make
+make test
 ```
 
 Windows (MinGW/LLVM):
 
 ```bat
 build.bat
+build.bat test
 ```
 
 ## Usage
@@ -23,27 +29,12 @@ build.bat
 ./json-mini --validate --file samples/example.json
 ```
 
-```bash
-echo "{\"a\":[1,true,null]}" | ./json-mini --pretty
-```
-
-Windows:
-
-```bat
-build\json-mini.exe --pretty --file samples\example.json
-build\json-mini.exe --validate --file samples\example.json
-```
-
 Windows PowerShell:
 
 ```powershell
 .\build\json-mini.exe --pretty --file samples\example.json
 .\build\json-mini.exe --validate --file samples\example.json
-```
-
-```powershell
 '{"a":[1,true,null]}' | .\build\json-mini.exe --pretty
-Get-Content samples\example.json -Raw | .\build\json-mini.exe --pretty
 ```
 
 `--validate` parses the input and exits `0` on success without printing the value.
@@ -60,9 +51,9 @@ std::cout << v.stringify(true);
 
 ## Exit codes
 
-- `0` â€” success (`--validate` prints nothing)
-- `1` â€” parse / runtime error
-- `2` â€” usage or I/O error
+- `0` — success (`--validate` prints nothing)
+- `1` — parse / runtime error
+- `2` — usage or I/O error
 
 ## License
 
